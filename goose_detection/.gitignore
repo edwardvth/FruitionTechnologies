@@ -1,5 +1,5 @@
-# Datasets — download locally via scripts, never commit images
-data/raw/
+# Datasets
+data/raw/gabe_yolo/.git/
 data/processed/images/
 data/tfrecords/
 

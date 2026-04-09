@@ -1,6 +1,10 @@
 # Goose Detection Training Commands
 # Target: NVIDIA Jetson Nano (8GB RAM)
 
+# === Setup (run first) ===
+cd goose_detection
+pip install -r requirements.txt
+
 # === Most accurate training ===
 python scripts/train_yolo.py --epochs 150 --batch 1 --imgsz 640
 
@@ -9,3 +13,17 @@ python scripts/train_yolo.py --epochs 150 --batch 1 --imgsz 640 --resume
 
 # === After training, best weights saved at ===
 # models/goose_yolo/weights/best.pt
+
+# === Push to GitHub ===
+# 1. Create a new empty repo on GitHub (no README, no .gitignore, no license)
+# 2. Then run:
+cd "c:/Users/edwar/Documents/Purdue/CYC/FruitionTechnologies"
+git commit -m "Initial commit: goose detection project"
+git branch -M main
+git remote add origin https://github.com/YOUR_USERNAME/FruitionTechnologies.git
+git push -u origin main
+
+# === After initial push is done, add data/raw ===
+git add goose_detection/.gitignore goose_detection/data/raw/
+git commit -m "Add raw dataset"
+git push
