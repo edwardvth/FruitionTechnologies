@@ -1,0 +1,79 @@
+# goose_config.yaml
+# EfficientDetD0 fine-tuning config for Canadian Goose detection.
+# Based on efficientdet_d0_coco.yaml from TF Model Garden.
+# Target hardware: NVIDIA Jetson Orin Nano Super
+
+# ── Model Architecture ────────────────────────────────────────────────────────
+model_type: efficientdet_d0
+
+# EfficientDet-D0 backbone: EfficientNet-B0, BiFPN depth=3, width=64
+efficientdet:
+  num_classes: 1                  # single class: canadian_goose
+  image_size: 512                 # D0 native input size
+  min_level: 3
+  max_level: 7
+  fpn_num_filters: 64
+  fpn_cell_repeats: 3
+  box_class_repeats: 3
+  anchor_scale: 4.0
+  aspect_ratios: [1.0, 2.0, 0.5]
+  num_scales: 3
+
+# ── Pretrained Checkpoint ─────────────────────────────────────────────────────
+# Download from:
+# wget https://storage.googleapis.com/cloud-tpu-checkpoints/efficientdet/coco2/efficientdet-d0.tar.gz
+init_checkpoint: models/efficientdet-d0/ckpt-0
+init_checkpoint_modules: all       # load both backbone and head
+
+# ── Data Paths ────────────────────────────────────────────────────────────────
+train_file_pattern: data/tfrecords/goose_train-*-of-*.tfrecord
+eval_file_pattern: data/tfrecords/goose_val-*-of-*.tfrecord
+
+label_map:
+  1: canadian_goose
+
+# ── Training Hyperparameters ──────────────────────────────────────────────────
+train:
+  batch_size: 8                   # reduce to 4 if OOM on Jetson (8GB LPDDR5)
+  epochs: 50
+  optimizer:
+    type: sgd
+    momentum: 0.9
+    weight_decay: 4.0e-5
+  learning_rate:
+    type: cosine
+    initial_value: 0.008          # scaled: base_lr * (batch_size / 64)
+    warmup_steps: 500
+    decay_steps: 10000
+
+  # Data augmentation
+  augmentation:
+    random_horizontal_flip: true
+    random_scale_range: [0.8, 1.2]
+    random_crop_min_scale: 0.8
+    random_brightness_max_delta: 0.2
+    random_contrast_range: [0.8, 1.2]
+
+# ── Evaluation ────────────────────────────────────────────────────────────────
+eval:
+  batch_size: 4
+  eval_interval: 5               # evaluate every N epochs
+  metric: coco                   # mAP @ IoU=0.50:0.95
+  eval_samples: 200              # approx 10% of dataset
+
+# ── Loss ──────────────────────────────────────────────────────────────────────
+losses:
+  focal_loss_alpha: 0.25
+  focal_loss_gamma: 1.5          # slightly lower than default 2.0 for small dataset
+  box_loss_weight: 50.0
+  iou_loss_type: giou
+
+# ── Anchor Settings ───────────────────────────────────────────────────────────
+# Tuned for geese which appear as medium-large objects at 10-50m
+anchors:
+  min_anchor_size: 32
+  max_anchor_size: 512
+
+# ── Output ────────────────────────────────────────────────────────────────────
+model_dir: models/goose_model
+export_dir: models/goose_saved_model

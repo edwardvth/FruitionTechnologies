@@ -1,0 +1,10 @@
+# YOLOv11s goose detection dataset config
+# Used by: python scripts/train_yolo.py
+
+path: ../data/yolo   # relative to configs/
+train: images/train
+val:   images/val
+test:  images/test
+
+nc: 1
+names: ['canadian_goose']

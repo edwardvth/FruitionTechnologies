@@ -1,0 +1,11 @@
+# Goose Detection Training Commands
+# Target: NVIDIA Jetson Nano (8GB RAM)
+
+# === Most accurate training ===
+python scripts/train_yolo.py --epochs 150 --batch 1 --imgsz 640
+
+# === Resume training if interrupted ===
+python scripts/train_yolo.py --epochs 150 --batch 1 --imgsz 640 --resume
+
+# === After training, best weights saved at ===
+# models/goose_yolo/weights/best.pt

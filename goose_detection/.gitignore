@@ -1,0 +1,26 @@
+# Datasets — download locally via scripts, never commit images
+data/raw/
+data/processed/images/
+data/tfrecords/
+
+# Model weights and checkpoints (large binary files)
+models/efficientdet-d0/
+models/goose_model/
+models/goose_saved_model/
+models/*.engine
+models/*.tflite
+models/*.onnx
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db

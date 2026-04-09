@@ -1,0 +1,23 @@
+# Core ML — PyTorch with CUDA 12.1 (compatible with CUDA 12.5 driver)
+# Install torch separately via the command below (not pip install from here):
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+
+# EfficientDet (PyTorch implementation — replaces TF Model Garden)
+effdet==0.4.1
+timm==0.9.12
+
+# Dataset preparation
+Pillow>=10.0.0
+numpy>=1.24.0
+opencv-python>=4.8.0
+roboflow>=1.1.0
+albumentations>=1.3.1
+
+# YOLOv11 (Ultralytics)
+ultralytics>=8.3.0
+
+# Utilities
+tqdm>=4.66.0
+matplotlib>=3.7.0
+pycocotools>=2.0.7
+tensorboard>=2.14.0
