@@ -1,18 +1,18 @@
 task: detect
 mode: train
 model: yolo11s.pt
-data: C:\Users\edwar\AppData\Local\Temp\tmp1bbphljj.yaml
-epochs: 50
+data: /tmp/tmpiljhsfct.yaml
+epochs: 150
 time: null
 patience: 15
-batch: 8
-imgsz: 416
+batch: 1
+imgsz: 640
 save: true
 save_period: -1
 cache: false
 device: '0'
 workers: 8
-project: C:\Users\edwar\Documents\Purdue\CYC\FruitionTechnologies\goose_detection\models
+project: /home/fruitiontech/fruitiontechnologies/goose_detection/models
 name: goose_yolo
 exist_ok: true
 pretrained: true
@@ -80,6 +80,7 @@ warmup_momentum: 0.8
 warmup_bias_lr: 0.1
 box: 7.5
 cls: 0.5
+cls_pw: 0.0
 dfl: 1.5
 pose: 12.0
 kobj: 1.0
@@ -106,4 +107,4 @@ auto_augment: randaugment
 erasing: 0.4
 cfg: null
 tracker: botsort.yaml
-save_dir: C:\Users\edwar\Documents\Purdue\CYC\FruitionTechnologies\goose_detection\models\goose_yolo
+save_dir: /home/fruitiontech/fruitiontechnologies/goose_detection/models/goose_yolo
