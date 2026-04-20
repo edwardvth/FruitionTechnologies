@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Goose Detector
+Comment=Auto-start YOLOv11 goose detection pipeline with live preview window
+Exec=/bin/bash -c 'cd /home/fruitiontech/fruitiontechnologies/goose_detection && mkdir -p results && /usr/bin/python3 inference/inference_pipeline.py >> results/goose-detector.log 2>&1'
+Terminal=false
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=5

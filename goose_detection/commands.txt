@@ -42,7 +42,30 @@ python3 inference/inference_pipeline.py --headless
 # --no-save-clips         disable saving event clips to results/clips/
 # --test_image PATH       run once on a single image
 
-# === Systemd service (auto-start on boot, headless) ===
+# === Auto-start GUI on boot (recommended: XDG autostart) ===
+# Pipeline runs at graphical login, shows preview window, logs to results/goose-detector.log.
+# One-time install (copy the desktop entry into the user autostart dir):
+mkdir -p ~/.config/autostart
+cp scripts/goose-detector.desktop ~/.config/autostart/
+
+# Turn autostart off / on:
+rm ~/.config/autostart/goose-detector.desktop     # off (next boot won't launch it)
+cp scripts/goose-detector.desktop ~/.config/autostart/  # on
+
+# Optional: enable auto-login so boot -> desktop -> detector with no manual login
+#   Settings > Users > Automatic Login: ON
+
+# Watch live output after boot:
+tail -f results/goose-detector.log
+
+# Stop the running instance (so you can run your own command):
+pkill -f inference_pipeline.py
+
+# === Systemd service (ALTERNATIVE: headless daemon, no GUI ever) ===
+# Use this instead of the autostart above if you want the pipeline to run
+# even when no one is logged in (true kiosk daemon). Do NOT enable both at
+# the same time — only one process can open the camera.
+#
 # One-time install
 sudo bash scripts/install_systemd.sh
 
@@ -53,12 +76,16 @@ sudo systemctl start goose-detector         # start again
 sudo systemctl restart goose-detector       # restart
 sudo systemctl disable goose-detector       # don't start on boot
 sudo systemctl enable --now goose-detector  # re-enable and start now
-tail -f results/goose-detector.log          # watch live output
 
-# === Switch between headless and GUI ===
-# The systemd service runs with --headless and holds the camera.
-# To use the GUI, stop the service first (only one process can open the camera):
-sudo systemctl stop goose-detector
-python3 inference/inference_pipeline.py
-# ...Ctrl+C or press 'q' to exit, then:
-sudo systemctl start goose-detector
+# === Switch between autostart GUI and systemd headless ===
+# Camera is exclusive to one process. To swap modes:
+#
+# Autostart GUI  ->  headless service:
+rm ~/.config/autostart/goose-detector.desktop
+pkill -f inference_pipeline.py
+sudo systemctl enable --now goose-detector
+#
+# Headless service  ->  autostart GUI:
+sudo systemctl disable --now goose-detector
+cp scripts/goose-detector.desktop ~/.config/autostart/
+# then log out and back in (or reboot) to trigger the autostart
