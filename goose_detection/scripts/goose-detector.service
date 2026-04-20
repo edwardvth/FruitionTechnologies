@@ -1,0 +1,24 @@
+[Unit]
+Description=Goose Detection Pipeline (YOLOv11 + person-safety interlock)
+After=network-online.target nvargus-daemon.service
+Wants=network-online.target
+Requires=nvargus-daemon.service
+
+[Service]
+Type=simple
+User=fruitiontech
+Group=fruitiontech
+WorkingDirectory=/home/fruitiontech/fruitiontechnologies/goose_detection
+ExecStart=/usr/bin/python3 /home/fruitiontech/fruitiontechnologies/goose_detection/inference/inference_pipeline.py --headless
+Restart=always
+RestartSec=5
+StandardOutput=append:/home/fruitiontech/fruitiontechnologies/goose_detection/results/goose-detector.log
+StandardError=append:/home/fruitiontech/fruitiontechnologies/goose_detection/results/goose-detector.log
+KillSignal=SIGTERM
+TimeoutStopSec=10
+
+# Run with GPU access (Jetson nvargus/CUDA need the graphics group)
+SupplementaryGroups=video
+
+[Install]
+WantedBy=multi-user.target

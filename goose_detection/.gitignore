@@ -24,3 +24,8 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+
+# Runtime artifacts
+test_if_goose/*.detected.*
+results/clips/
+results/*.log

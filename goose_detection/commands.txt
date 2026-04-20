@@ -27,3 +27,38 @@ git push -u origin main
 git add goose_detection/.gitignore goose_detection/data/raw/
 git commit -m "Add raw dataset"
 git push
+
+# === Inference (live camera) ===
+# Run from goose_detection/ project root.
+
+# GUI mode (preview window with goose boxes + person-safety banner)
+python3 inference/inference_pipeline.py
+
+# Headless mode (no window — used by systemd service and SSH runs)
+python3 inference/inference_pipeline.py --headless
+
+# Useful inference flags
+# --conf 0.35             lower goose confidence threshold (more sensitive)
+# --no-save-clips         disable saving event clips to results/clips/
+# --test_image PATH       run once on a single image
+
+# === Systemd service (auto-start on boot, headless) ===
+# One-time install
+sudo bash scripts/install_systemd.sh
+
+# Day-to-day control
+sudo systemctl status goose-detector        # current state
+sudo systemctl stop goose-detector          # stop (e.g. to run GUI manually)
+sudo systemctl start goose-detector         # start again
+sudo systemctl restart goose-detector       # restart
+sudo systemctl disable goose-detector       # don't start on boot
+sudo systemctl enable --now goose-detector  # re-enable and start now
+tail -f results/goose-detector.log          # watch live output
+
+# === Switch between headless and GUI ===
+# The systemd service runs with --headless and holds the camera.
+# To use the GUI, stop the service first (only one process can open the camera):
+sudo systemctl stop goose-detector
+python3 inference/inference_pipeline.py
+# ...Ctrl+C or press 'q' to exit, then:
+sudo systemctl start goose-detector
