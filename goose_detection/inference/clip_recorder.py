@@ -9,6 +9,8 @@ Behavior:
     - After `post_roll_sec` seconds without any detection, closes the MP4 and
       writes a sibling .json with per-clip metadata.
     - Re-detections inside the post-roll window simply extend the same clip.
+    - All file I/O runs on a background worker thread, so on_frame() never
+      blocks the capture / inference loop.
 
 Usage:
     recorder = ClipRecorder(output_dir="results/clips", fps=15,
@@ -21,6 +23,8 @@ Usage:
 from __future__ import annotations
 
 import json
+import queue
+import threading
 import time
 from collections import deque
 from datetime import datetime
@@ -41,6 +45,7 @@ class ClipRecorder:
         pre_roll_sec: float = 10.0,
         post_roll_sec: float = 3.0,
         fourcc: str = "mp4v",
+        queue_size: int = 60,
     ):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -57,6 +62,14 @@ class ClipRecorder:
         self.clip_path = None
         self.meta: dict = {}
 
+        self._queue: queue.Queue = queue.Queue(maxsize=queue_size)
+        self._stop_sentinel = object()
+        self._dropped = 0
+        self._worker = threading.Thread(
+            target=self._worker_loop, daemon=True, name="ClipRecorder"
+        )
+        self._worker.start()
+
     def on_frame(
         self,
         frame: np.ndarray,
@@ -65,11 +78,53 @@ class ClipRecorder:
         detection_count: int = 0,
         track_ids=None,
     ) -> None:
+        """Non-blocking: copy the frame and hand it to the worker thread."""
+        item = (
+            frame.copy(),
+            bool(has_detection),
+            float(top_conf),
+            int(detection_count),
+            [int(i) for i in (track_ids or []) if i >= 0],
+            time.time(),
+        )
+        try:
+            self._queue.put_nowait(item)
+        except queue.Full:
+            self._dropped += 1
+            if self._dropped % 30 == 1:
+                print(
+                    f"[CLIP] WARN: recorder queue full, dropped {self._dropped} frames "
+                    "(disk or encoder too slow)"
+                )
+
+    def close(self) -> None:
+        self._queue.put(self._stop_sentinel)
+        self._worker.join(timeout=30)
+
+    # ── worker thread ────────────────────────────────────────────────────────
+
+    def _worker_loop(self) -> None:
+        while True:
+            item = self._queue.get()
+            if item is self._stop_sentinel:
+                if self.state == self.RECORDING:
+                    self._finalize_clip(time.time())
+                return
+            frame, has_detection, top_conf, detection_count, track_ids, ts = item
+            self._process(frame, has_detection, top_conf, detection_count, track_ids, ts)
+
+    def _process(
+        self,
+        frame: np.ndarray,
+        has_detection: bool,
+        top_conf: float,
+        detection_count: int,
+        track_ids,
+        now: float,
+    ) -> None:
         if self.frame_size is None:
             h, w = frame.shape[:2]
             self.frame_size = (w, h)
-
-        now = time.time()
 
         if has_detection:
             if self.state == self.IDLE:
@@ -83,11 +138,7 @@ class ClipRecorder:
                 if now - self.last_detection_time >= self.post_roll_sec:
                     self._finalize_clip(now)
 
-        self.ring.append(frame.copy())
-
-    def close(self) -> None:
-        if self.state == self.RECORDING:
-            self._finalize_clip(time.time())
+        self.ring.append(frame)
 
     def _start_clip(self, now: float) -> None:
         first_frame_ts = now - self.pre_roll_sec

@@ -95,7 +95,8 @@ def setup_gpio():
         GPIO.setup(GPIO_PIN, GPIO.OUT, initial=GPIO.LOW)
         _gpio_handle = GPIO
         return GPIO
-    except ImportError:
+    except Exception as e:
+        print(f"[GPIO] unavailable, falling back to simulation: {e}")
         _gpio_handle = None
         return None
 
@@ -246,6 +247,7 @@ def run_camera_loop(
     save_clips: bool = True,
     clip_fps: float = CLIP_FPS,
     headless: bool = False,
+    debug: bool = False,
 ):
     cap = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
     if not cap.isOpened():
@@ -255,6 +257,23 @@ def run_camera_loop(
         )
 
     setup_gpio()
+
+    debug_dir = None
+    if debug:
+        import torch
+        debug_dir = Path("results/debug")
+        debug_dir.mkdir(parents=True, exist_ok=True)
+        cuda_ok = torch.cuda.is_available()
+        dev_name = torch.cuda.get_device_name(0) if cuda_ok else "cpu"
+        print(f"[DBG] CUDA={cuda_ok}  device={dev_name}  torch={torch.__version__}")
+        dummy = np.zeros((720, 1280, 3), dtype=np.uint8)
+        t0 = time.perf_counter()
+        tracker.model.predict(dummy, conf=0.01, device=tracker.device, verbose=False)
+        print(f"[DBG] Goose warmup: {(time.perf_counter()-t0)*1000:.0f}ms")
+        t0 = time.perf_counter()
+        safety.model.predict(dummy, conf=0.01, device=safety.device, verbose=False)
+        print(f"[DBG] Safety warmup: {(time.perf_counter()-t0)*1000:.0f}ms")
+        print(f"[DBG] Saving raw frames every 30 frames -> {debug_dir.resolve()}")
 
     recorder = None
     if save_clips:
@@ -273,6 +292,7 @@ def run_camera_loop(
     print(f"Camera running ({'headless' if headless else 'GUI'}). "
           f"{'Ctrl+C' if headless else 'q in window or Ctrl+C'} to stop.")
 
+    debug_counter = 0
     try:
         while True:
             ret, frame = cap.read()
@@ -280,10 +300,48 @@ def run_camera_loop(
                 print("[WARN] Dropped frame")
                 continue
 
+            debug_counter += 1
+
             t0 = time.perf_counter()
             g_boxes, g_scores, g_ids = tracker.track(frame)
             p_boxes = safety.detect(frame)
             latency_ms = (time.perf_counter() - t0) * 1000
+
+            if debug and debug_counter % 15 == 0:
+                g_raw = tracker.model.predict(
+                    frame, conf=0.01, device=tracker.device, verbose=False
+                )[0]
+                p_raw = safety.model.predict(
+                    frame, conf=0.01, device=safety.device, verbose=False
+                )[0]
+                g_confs = (
+                    g_raw.boxes.conf.cpu().numpy().tolist()
+                    if g_raw.boxes is not None and len(g_raw.boxes) > 0
+                    else []
+                )
+                p_confs = (
+                    p_raw.boxes.conf.cpu().numpy().tolist()
+                    if p_raw.boxes is not None and len(p_raw.boxes) > 0
+                    else []
+                )
+                p_classes = (
+                    p_raw.boxes.cls.cpu().numpy().astype(int).tolist()
+                    if p_raw.boxes is not None and len(p_raw.boxes) > 0
+                    else []
+                )
+                p_names = getattr(p_raw, "names", {})
+                g_top = [f"{s:.2f}" for s in sorted(g_confs, reverse=True)[:5]]
+                p_top = [
+                    f"{p_names.get(c, c)}={s:.2f}"
+                    for c, s in sorted(zip(p_classes, p_confs), key=lambda x: -x[1])[:5]
+                ]
+                print(
+                    f"[DBG f={debug_counter}] goose_raw_confs={g_top} "
+                    f"person_raw={p_top}  filt_g={len(g_scores)} filt_p={len(p_boxes)}"
+                )
+
+            if debug and debug_counter % 30 == 0 and debug_dir is not None:
+                cv2.imwrite(str(debug_dir / f"frame_{debug_counter:06d}.jpg"), frame)
 
             goose_present = len(g_scores) > 0
             person_present = len(p_boxes) > 0
@@ -394,6 +452,8 @@ def main():
                         help=f"Playback FPS for saved clips (default {CLIP_FPS})")
     parser.add_argument("--headless", action="store_true",
                         help="Skip the cv2.imshow preview window (for systemd / SSH runs)")
+    parser.add_argument("--debug", action="store_true",
+                        help="Print raw detector outputs every 15 frames + dump raw camera frames to results/debug/")
     args = parser.parse_args()
 
     if not Path(args.weights).exists():
@@ -414,6 +474,7 @@ def main():
             save_clips=not args.no_save_clips,
             clip_fps=args.clip_fps,
             headless=args.headless,
+            debug=args.debug,
         )
 
 

@@ -28,4 +28,5 @@ Thumbs.db
 # Runtime artifacts
 test_if_goose/*.detected.*
 results/clips/
+results/debug/
 results/*.log
