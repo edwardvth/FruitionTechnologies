@@ -44,8 +44,9 @@ from inference.clip_recorder import ClipRecorder
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
-DEFAULT_WEIGHTS = "models/goose_yolo/weights/best.pt"
-DEFAULT_SAFETY_WEIGHTS = "yolo11n.pt"   # COCO pretrained, downloaded on first use if absent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_WEIGHTS = str(PROJECT_ROOT / "models/goose_yolo/weights/best.pt")
+DEFAULT_SAFETY_WEIGHTS = str(PROJECT_ROOT / "yolo11n.pt")   # COCO pretrained, downloaded on first use if absent
 CONFIDENCE_THRESHOLD = 0.50
 SAFETY_CONF_THRESHOLD = 0.35             # lower = more aggressive safety disabling
 GOOSE_CLASS_ID = 0                       # in custom model: 0 = canadian_goose
