@@ -17,6 +17,7 @@ The project contains two goose-detection approaches: **YOLO**, which is used by 
 - **A fresh copy of the repository is missing files that EfficientDet training needs.** All 6,675 referenced processed images are absent from Git, and the trainer silently replaces missing images with blank samples. The YOLO images are present. This does not prove the existing saved model was trained on blank images; its original computer may have had the missing files.
 - **There are useful positive results.** We checked 7,115 YOLO images and found no identical image files shared between training, validation and test groups, no missing matching label files, and no malformed or out-of-bounds box labels. This does not check whether every label is visually correct or whether similar pictures of the same scene occur in different groups.
 - **The saved YOLO results are promising evidence to investigate, not a deployment guarantee.** Its best recorded validation mAP50–95 is 0.71481. That is an object-detection benchmark score, **not “71.5% accurate”** and not a measure of person safety. We read that historical result; we did not rerun it or measure the current system outdoors.
+- **Addendum: the live YOLO detection logic has its own problems.** Debug mode quietly changes tracking, the 0.5 confidence filter disables part of the tracker, a single frame counts as a goose, and the 0.715 score is the best of a very noisy training run that used batch size 1. The test split was never scored. Details and fixes in the [detection model addendum](detection-model-addendum.md) (D1–D10).
 
 ### Every finding in everyday language
 
@@ -40,6 +41,9 @@ The project contains two goose-detection approaches: **YOLO**, which is used by 
 | **R4: Recording can fail or shutdown can get stuck** | A video-writing error can stop the worker that saves clips; a full queue can prevent clean shutdown. | **For unattended use:** report recorder health, handle errors and bound every shutdown wait. | Exception and queue behavior reproduced with mocks. |
 | **R5: Recordings and logs can fill the disk** | Continuous operation has no built-in limit on stored clips, debug pictures or appended logs. | **For unattended use:** add retention limits, disk-space checks and log rotation. | Limits absent from repository; actual disk exhaustion not tested. |
 | **R6: Clip timestamps can overstate coverage** | A clip can claim seconds of footage from before the event even when that footage was not captured. Variable speed also changes timing assumptions. | **For dependable incident records:** timestamp captured frames and report actual coverage. | Confirmed by code calculation; camera timing unmeasured. |
+| **D1–D3: Live detection decision is fragile** | Debug mode feeds extra frames into the tracker; the 0.5 filter blocks ByteTrack's weak-box matching; one frame is enough to say "goose". | **Before field tests:** separate debug model, track at conf 0.1, require a confirmed track over several frames. | Confirmed from code and Ultralytics 8.4.39 source. See [addendum](detection-model-addendum.md). |
+| **D4–D6: The 0.715 score overstates what we know** | Training at batch 1 made validation scores swing ±0.3; best.pt is the luckiest epoch; the test split was never scored; 0.5 isn't the curve's best threshold (0.261). | **Before quoting accuracy:** score best.pt on the test split, retrain with a real batch size, pick the threshold from data. | Confirmed from results.csv, args.yaml, F1 curve. |
+| **D7–D10: Speed and improvement loop** | Person safety runs on the smallest model; frames are shrunk 2×; no TensorRT; clips can't feed retraining. | **For deployment:** TensorRT FP16, stronger person model, size-sliced recall, save raw field frames. | Code confirmed; gains not measured. |
 
 ### Smaller improvements worth doing
 
@@ -91,7 +95,7 @@ The following sections retain file locations, measured counts and reproduction i
 | `goose_detection/results/`, `test_if_goose/` | Example output and manual qualitative smoke-test images |
 | `reports/` | Audit reports and reproducible probes |
 
-Training has two separate branches: COCO manifests → `train.py` → EfficientDet `.pth` → `test_model.py`; YOLO labels → `train_yolo.py` → `models/goose_yolo/weights/best.pt` → `test_yolo.py` / live inference. The live pipeline targets NVIDIA Jetson and also loads `yolo26n.pt` as a person-safety model. Changes to EfficientDet do not automatically repair the YOLO runtime. Eight commits were reachable. No tracked automated CI workflow, unit-test suite, dependency lockfile or main README was present; `test_model.py` and `test_yolo.py` generate visual examples, not automated quantitative regression tests.
+Training has two separate branches: COCO manifests → `train.py` → EfficientDet `.pth` → `test_model.py`; YOLO labels → `train_yolo.py` → `models/goose_yolo/weights/best.pt` → `test_yolo.py` / live inference. The live pipeline targets NVIDIA Jetson and also loads `yolo11n.pt` as a person-safety model (corrected in the [detection addendum](detection-model-addendum.md); `yolo26n.pt` is tracked but unused). Changes to EfficientDet do not automatically repair the YOLO runtime. Eight commits were reachable. No tracked automated CI workflow, unit-test suite, dependency lockfile or main README was present; `test_model.py` and `test_yolo.py` generate visual examples, not automated quantitative regression tests.
 
 ## Priority findings
 
@@ -129,6 +133,7 @@ The audit checked **7,115 YOLO images** across train/val/test (5,700 / 707 / 708
 - [Dataset findings](data-findings.md), [machine-readable data evidence](data-evidence.json)
 - [Runtime and deployment findings](runtime_audit.md), [runtime probe output](runtime_probe_output.txt)
 - [Model and software trust findings](model-security-findings.md), [model probe evidence](model-evidence.json)
+- [Live YOLO detection model addendum](detection-model-addendum.md) (added 2026-10-22, D1–D10)
 - [Checkpoint inventory](checkpoint-inventory.json), [effdet contract reference](effdet-upstream-reference.json), [limited credential scan](security-evidence.json)
 
 From the repository root:
