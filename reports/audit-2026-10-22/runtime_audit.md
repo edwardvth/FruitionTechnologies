@@ -1,5 +1,11 @@
 # Runtime, actuation, recording and deployment audit
 
+## Plain-language guide
+
+This report examines what happens while the camera program runs and controls an output pin. The urgent issue is that the program can keep an old “laser on” command after losing the camera feed. Simulated tests confirmed the software behavior; no real laser or camera was used. The program should require deliberate hardware arming, verify its person detector, and turn off when fresh safety information is unavailable.
+
+R1–R3 concern physical-control decisions and should be addressed before hardware activation. R4–R5 concern reliable recording, shutdown and disk space during unattended operation. R6 concerns whether a saved clip's timing accurately describes the footage. “HIGH” means an enabled electrical output command, not a measured beam emission. “Worker” means a background task that writes video; “queue” is its waiting list of frames. A “timeout” puts a limit on how long an operation can wait. The [main summary](README.md) explains each finding's impact, next action and evidence limits.
+
 Date: 2026-10-22. Reviewed Git HEAD `b44d6e69708eff6057818973a453b18e1dfd5db5` using `git show` because checkout was still materializing. No source modifications, model deserialization, camera access, GPIO access, or service installation occurred. No applicable tracked AGENTS.md was found; checked ancestor locations also had none.
 
 Severity describes potential impact if the provided runtime is deployed with GPIO-connected laser hardware. The module says hardware is not yet connected (inference_pipeline.py:14–17); this audit cannot establish real deployment or physical hazard severity. Findings below concern implementation and do not establish exploitation, actual beam emission, or measured detector performance.

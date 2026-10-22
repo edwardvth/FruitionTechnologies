@@ -1,5 +1,11 @@
 # Model evaluation and software trust audit
 
+## Plain-language guide
+
+This report checks whether training and testing produce meaningful results, and whether the software can trust the files and packages it loads. EfficientDet currently rewards confidence even when an answer is wrong, and its image-testing script draws boxes using the wrong coordinate order. YOLO's resume option also does not request a full continuation of interrupted training. These are separate issues in separate scripts; they do not establish that the live YOLO model has poor accuracy.
+
+M1–M3 are evaluation/training problems. M4 and S1 describe trust boundaries: harmful model files, software packages or dataset instructions could cause trouble if they are supplied or replaced by an attacker. We found missing protections, not a confirmed attack or a confirmed vulnerable deployed computer. “Strict loading” checks whether the saved model matches the expected structure. A “category mapping” tells the program which numeric class means goose or person. See the [main summary and glossary](README.md) for everyday explanations, practical consequences and priorities for every finding.
+
 Scope: `edwardvth/FruitionTechnologies`, commit `b44d6e69708eff6057818973a453b18e1dfd5db5`, 2026-10-22. Source locations below refer to that commit. These findings complement the data and runtime reports. Severity reflects impact and required preconditions, not confirmed exploitation.
 
 ## M1 — High, confirmed: EfficientDet selects checkpoints by confidence, not correctness

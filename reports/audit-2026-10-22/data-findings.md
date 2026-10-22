@@ -1,5 +1,11 @@
 # Dataset audit — 2026-10-22
 
+## Plain-language guide
+
+This report asks whether the pictures and expected answers used to teach and assess the models can be trusted. Its main confirmed problem is that a fresh repository download lacks the image folder needed by EfficientDet, and missing pictures become blank training examples silently. The live YOLO dataset is present and passed checks for identical files crossing groups and mathematically invalid boxes.
+
+DATA-01 is a reproducibility problem, not proof that the existing saved model was trained incorrectly. DATA-02 and DATA-03 identify labels needing human visual review, not a measured count of bad labels. DATA-04 describes code that hides preparation errors. DATA-05 concerns future rebuilds; it does not contradict the current duplicate checks passing. The recommendation is to verify inputs before training and preserve their history. “COCO” and “YOLO” below describe different label layouts; “positive” means a goose is labelled and “negative” means none is labelled. See the [main summary and glossary](README.md) for the practical impact and next action for every finding.
+
 Scope: committed tree `b44d6e69708eff6057818973a453b18e1dfd5db5`. Reproduce with `python3 reports/audit-2026-10-22/data_probe.py`. The probe reads Git blobs and JSON/text only, so checkout timing does not affect results. It does not execute training or deserialize checkpoints. Machine-readable counts are in `data-evidence.json`.
 
 ## Measured data inventory

@@ -2,7 +2,78 @@
 
 **Audit date:** 2026-10-22. **Repository:** [edwardvth/FruitionTechnologies](https://github.com/edwardvth/FruitionTechnologies). **Reviewed commit:** `b44d6e69708eff6057818973a453b18e1dfd5db5` (`main` at inspection). Three parallel reviewers examined data, runtime/deployment, and model evaluation/software trust. Application code and weights were not changed.
 
-The largest confirmed concerns are stale actuator commands after camera failures, weak safety-model/configuration validation, and misleading EfficientDet evaluation. The YOLO dataset passed exact duplicate and label-geometry checks, and its committed training log contains useful validation metrics. These checks do not establish safe physical deployment or held-out field accuracy.
+## Summary — what we found and what it means
+
+**The project contains training and live-camera software with saved training results, but this audit found important problems to address before trusting the results or allowing the software to control connected laser hardware.** The most urgent problem is that the software can leave its previous “laser on” command in place when the camera stops providing images. We reproduced that software behavior with a simulated output; we did not connect or test a real laser.
+
+Three reviewers worked in parallel. We examined the project files, checked the dataset, inspected the saved results, and ran small controlled tests of the code. **This was an audit, not a repair or a fresh accuracy test.** Publishing these reports to GitHub main does not change the application or fix any finding. The next work is to make the corrections below and test them.
+
+The project contains two goose-detection approaches: **YOLO**, which is used by the live camera program, and **EfficientDet**, which has separate training and image-testing scripts. Several serious training/reporting problems apply specifically to EfficientDet; they do not automatically mean the live YOLO detector has those same problems. The live program also uses a separate model to look for people and suppress the laser command.
+
+### The most important takeaways
+
+- **Address hardware controls first.** Losing the camera feed can preserve an old “on” command. Hardware can also become active automatically when the GPIO library works, and the program does not verify that the chosen safety model actually identifies people in the expected way. These are confirmed code weaknesses; the actual electrical behavior and real-world risk require testing on the intended hardware.
+- **Do not treat the EfficientDet “best” score as accuracy.** It rewards how confident the model sounds, even when its answer is wrong. Our controlled example gave it a completely misplaced detection and it still returned a score of 0.99. Its image-testing script also draws boxes with horizontal and vertical coordinates mixed up.
+- **A fresh copy of the repository is missing files that EfficientDet training needs.** All 6,675 referenced processed images are absent from Git, and the trainer silently replaces missing images with blank samples. The YOLO images are present. This does not prove the existing saved model was trained on blank images; its original computer may have had the missing files.
+- **There are useful positive results.** We checked 7,115 YOLO images and found no identical image files shared between training, validation and test groups, no missing matching label files, and no malformed or out-of-bounds box labels. This does not check whether every label is visually correct or whether similar pictures of the same scene occur in different groups.
+- **The saved YOLO results are promising evidence to investigate, not a deployment guarantee.** Its best recorded validation mAP50–95 is 0.71481. That is an object-detection benchmark score, **not “71.5% accurate”** and not a measure of person safety. We read that historical result; we did not rerun it or measure the current system outdoors.
+
+### Every finding in everyday language
+
+“Confirmed” means the code or a controlled test supports the finding. “Review needed” means there is a reason to investigate, but the suspected real-world error has not been demonstrated. Importance indicates when to address it, not how likely an attack is.
+
+| Finding | What this means in practice | Importance and next action | Evidence / certainty |
+|---|---|---|---|
+| **R1: An old laser command can remain on** | The camera can stop supplying pictures while the software keeps the last “on” decision. A slow or stuck prediction can also delay a new safety decision. | **Before hardware use:** turn off on lost/stale images and independently expire every on-command. Test the actual hardware's default-off behavior. | Confirmed using simulated GPIO; real laser behavior untested. |
+| **R2: Hardware mode is automatic** | A command used for a demonstration can start controlling a connected device simply because the hardware library is available. | **Before hardware use:** default to simulation and require deliberate arming after checks. | Confirmed in code. |
+| **R3: The person detector is trusted without identity checks** | Selecting the wrong compatible model could cause “no person detected” to mean “the wrong category was checked.” | **Before hardware use:** verify the approved model file and its category names before enabling output. | Missing checks confirmed; no evidence that the current default model is mislabelled. |
+| **DATA-01: Training inputs are missing in a fresh download** | EfficientDet can appear to train while receiving blank placeholders instead of the intended photos. | **Before EfficientDet training:** restore verified images and stop with a clear error if any are missing. | All 6,675 required processed-image paths absent from Git; fallback confirmed in code. |
+| **M1: Confidence is mistaken for correctness** | A confidently wrong EfficientDet model can be chosen as “best.” | **Before trusting its results:** compare predictions to human labels and measure missed objects and false alarms. | Reproduced: a wrong-only example scored 0.99. |
+| **M2: Detection boxes are drawn in the wrong place** | The EfficientDet test script mixes up horizontal and vertical positions, making its output misleading. | **Before interpreting these images:** fix coordinate order and test with an off-center object. | Reproduced against the pinned library's documented output. |
+| **M3: “Resume” does not request a true continuation** | YOLO can start a new training session from saved weights instead of restoring the interrupted training state. | **Before relying on resume:** use the library's resume option and verify the restored training step and optimizer. | Code and official library contract confirm the missing option; training was not rerun. |
+| **M4: Software/model provenance is not enforced** | Different computers can install different dependency versions; a replaced or untrusted model file may be unsafe to load. Incomplete weights can also load without a strict check. | **Before a release:** record exact supported versions, verify trusted file hashes, check actual installed versions for vulnerabilities and reject incompatible weights. | Missing protections confirmed. Exploitation and the Jetson's installed vulnerability status are unknown. |
+| **S1: Downloaded datasets can name unapproved files** | Data downloads use unencrypted HTTP, and a crafted manifest can point outside the expected image folder. Importing it could copy unintended local files into generated data. | **Before importing new data:** verify downloads and restrict every file path to the approved folder. | Confirmed code trust boundary; requires malicious/intercepted input, and no attack was executed. |
+| **DATA-02: “No goose” labels need review** | One generator labels every source image as background without checking whether geese are present. Wrong negatives would teach the wrong lesson. | **Before retraining:** review likely bird images, label any actual geese and keep a review record. | Missing filtering confirmed; number of wrongly labelled images unknown. |
+| **DATA-03: Some boxes cover the whole picture** | A box may describe the scene instead of the goose, teaching or scoring the wrong location. Some full-picture boxes may be legitimate. | **Before retraining/evaluation:** visually review all 28 whole-frame box candidates and correct those that need it. | 28 candidates measured; not 28 proven errors. |
+| **DATA-04: Image-preparation errors remove answers** | If an image transformation fails, EfficientDet keeps the image but throws away its object labels without reporting the problem. | **Before retraining:** stop visibly or use a fallback that correctly transforms both image and labels. | Confirmed in code; occurrence rate not measured. |
+| **DATA-05: Rebuilding data can preserve mistakes** | Reused folders and incomplete duplicate handling can leave old files, repeated labels or unreviewed negatives in a future rebuild. | **For reliable rebuilds:** generate fresh output from one verified manifest and validate it before use. | Future code risk; current exact-duplicate checks passed. |
+| **R4: Recording can fail or shutdown can get stuck** | A video-writing error can stop the worker that saves clips; a full queue can prevent clean shutdown. | **For unattended use:** report recorder health, handle errors and bound every shutdown wait. | Exception and queue behavior reproduced with mocks. |
+| **R5: Recordings and logs can fill the disk** | Continuous operation has no built-in limit on stored clips, debug pictures or appended logs. | **For unattended use:** add retention limits, disk-space checks and log rotation. | Limits absent from repository; actual disk exhaustion not tested. |
+| **R6: Clip timestamps can overstate coverage** | A clip can claim seconds of footage from before the event even when that footage was not captured. Variable speed also changes timing assumptions. | **For dependable incident records:** timestamp captured frames and report actual coverage. | Confirmed by code calculation; camera timing unmeasured. |
+
+### Smaller improvements worth doing
+
+The EfficientDet saved “best score” can lag behind its actual newest result; update the saved metadata in the correct order. The YOLO trainer hardcodes GPU 0 despite a comment claiming automatic CPU fallback; choose a supported device explicitly. Old TensorFlow configuration files do not control the current PyTorch trainer; label historical files clearly so operators know which settings apply. Roboflow API keys supplied on the command line can enter shell history; use a protected credential source. These are maintenance and reliability improvements, with details in the model report.
+
+The repository would also benefit from a tested installation guide, automated regression checks, unique training-run records and a field evaluation of the exact models intended for deployment. The person detector needs its own evaluation: good goose detection says nothing by itself about how often a person is missed.
+
+### Terms used in the rest of the reports
+
+| Term | Plain-language meaning |
+|---|---|
+| Model / weights / checkpoint | A model is the program's learned image-recognition behavior. Weights are its learned numbers; a checkpoint is a saved file containing those numbers and sometimes training state. |
+| Training / inference | Training adjusts the learned behavior using examples. Inference uses the saved model to make a prediction about a new image. |
+| YOLO / EfficientDet | Two different object-detection model families. Here YOLO powers live camera detection; EfficientDet has separate scripts. |
+| Dataset / label / annotation / bounding box | A dataset is a collection of examples. Labels or annotations are the expected answers, including rectangles around objects called bounding boxes. |
+| Negative image | A training example labelled as containing no target goose. It must actually have no target goose to be a correct negative. |
+| Training / validation / test split | Separate groups of examples: one teaches the model, one guides training choices, and one is reserved for a final independent check. |
+| Leakage / duplicate | Leakage happens when information from an evaluation group also influences training. Identical or closely related images across groups can make results look better than performance on new scenes. |
+| Confidence | The model's score for a prediction. A high score does not prove the prediction is right. |
+| False positive / false negative | A false positive is a false alarm, such as calling another object a goose. A false negative is a missed real object, such as failing to detect a person. |
+| Precision / recall | Precision asks how many reported detections are correct; recall asks how many real objects were found. The tradeoff depends on the chosen confidence threshold. |
+| IoU / AP / mAP50–95 | IoU measures overlap between a predicted box and the correct box. AP summarizes detection quality across confidence thresholds. mAP50–95 averages AP across categories and several required overlap levels. It is not the percentage of all images answered correctly. |
+| GPIO / actuator / interlock / fail closed | GPIO is a hardware control pin. An actuator carries out a physical action. An interlock prevents action under unsafe conditions. Fail closed here means denying the laser-enable command when safety information is missing or invalid. |
+| Watchdog / stale decision | A watchdog independently checks that the system is still responsive. A stale decision was based on information too old to trust. |
+| Hash / manifest / provenance | A hash is a file fingerprint for checking identity. A manifest lists required files and metadata. Provenance records where files came from and how they were created. A hash alone does not prove a file is trustworthy. |
+| Dependency / lockfile / CVE | A dependency is another software package this project uses. A lockfile records exact versions. A CVE identifies a publicly reported vulnerability; it only applies if the relevant version and conditions match. |
+| Deserialization / pickle | Turning a saved file back into program objects. Some Python model formats can execute code while loading, so the file source and loader protections matter. |
+| Mock / synthetic probe | A controlled test with simulated hardware or made-up predictions. It checks a code path without proving how the complete real system performs. |
+| p95 / p99 latency | Response times that 95% or 99% of observations stay below. These expose occasional delays that an average can hide. |
+| Confidence interval | A range expressing uncertainty in a measured result. Testing only a few examples cannot establish a precise failure rate. |
+
+## Technical detail and evidence
+
+The following sections retain file locations, measured counts and reproduction instructions for developers. The three linked detailed reports begin with plain-language guides as well.
 
 ## Repository structure and actual execution paths
 
