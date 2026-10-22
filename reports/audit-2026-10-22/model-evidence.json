@@ -1,0 +1,24 @@
+{
+  "false_positive_only_validation_score": 0.9900000095367432,
+  "zero_iou_expected": true,
+  "upstream_xyxy_input": [
+    10,
+    20,
+    110,
+    220
+  ],
+  "scale_x": 2,
+  "scale_y": 1,
+  "expected_output_box": [
+    20,
+    20,
+    220,
+    220
+  ],
+  "actual_output_box": [
+    40,
+    10,
+    440,
+    110
+  ]
+}

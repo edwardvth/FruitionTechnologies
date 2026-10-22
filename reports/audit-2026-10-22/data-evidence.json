@@ -1,0 +1,128 @@
+{
+  "commit": "b44d6e69708eff6057818973a453b18e1dfd5db5",
+  "method": "Committed git blobs; exact shared image blob identities, SHA-256 verified for cross-split groups; no pickle or model loading",
+  "coco": {
+    "train": {
+      "images": 5340,
+      "annotations": 1597,
+      "negative_images": 3982,
+      "whole_frame_boxes": 22,
+      "duplicate_boxes": 0,
+      "errors": {},
+      "images_missing_processed_source": 5340
+    },
+    "val": {
+      "images": 667,
+      "annotations": 152,
+      "negative_images": 522,
+      "whole_frame_boxes": 1,
+      "duplicate_boxes": 0,
+      "errors": {},
+      "images_missing_processed_source": 667
+    },
+    "test": {
+      "images": 668,
+      "annotations": 206,
+      "negative_images": 496,
+      "whole_frame_boxes": 5,
+      "duplicate_boxes": 0,
+      "errors": {},
+      "images_missing_processed_source": 668
+    }
+  },
+  "yolo": {
+    "train": {
+      "images": 5700,
+      "positive_images": 1718,
+      "boxes": 2412,
+      "duplicate_boxes": 0,
+      "whole_frame_boxes": 22,
+      "negative_images": 3982,
+      "gabe_images": 360,
+      "errors": {},
+      "examples": {}
+    },
+    "val": {
+      "images": 707,
+      "positive_images": 185,
+      "boxes": 215,
+      "duplicate_boxes": 0,
+      "whole_frame_boxes": 1,
+      "negative_images": 522,
+      "gabe_images": 40,
+      "errors": {},
+      "examples": {}
+    },
+    "test": {
+      "images": 708,
+      "positive_images": 212,
+      "boxes": 332,
+      "duplicate_boxes": 0,
+      "whole_frame_boxes": 5,
+      "negative_images": 496,
+      "gabe_images": 40,
+      "errors": {},
+      "examples": {}
+    }
+  },
+  "cross_split_duplicates": {
+    "train_val": {
+      "unique_content_groups": 0,
+      "a_images": 0,
+      "b_images": 0,
+      "groups": []
+    },
+    "train_test": {
+      "unique_content_groups": 0,
+      "a_images": 0,
+      "b_images": 0,
+      "groups": []
+    },
+    "val_test": {
+      "unique_content_groups": 0,
+      "a_images": 0,
+      "b_images": 0,
+      "groups": []
+    }
+  },
+  "raw_coco": {
+    "goose_detection/data/raw/images_cv/coco_annotations.json": {
+      "images": 1532,
+      "annotations": 1532,
+      "categories": [
+        {
+          "id": 1,
+          "name": "canadian_goose",
+          "supercategory": "animal"
+        }
+      ]
+    },
+    "goose_detection/data/raw/negatives/coco_annotations.json": {
+      "images": 5000,
+      "annotations": 0,
+      "categories": [
+        {
+          "id": 1,
+          "name": "canadian_goose",
+          "supercategory": "animal"
+        }
+      ]
+    },
+    "goose_detection/data/raw/roboflow/Goose.v1i.coco/train/_annotations.coco.json": {
+      "images": 675,
+      "annotations": 955,
+      "categories": [
+        {
+          "id": 0,
+          "name": "Goose",
+          "supercategory": "none"
+        },
+        {
+          "id": 1,
+          "name": "Goose",
+          "supercategory": "Goose"
+        }
+      ]
+    }
+  }
+}

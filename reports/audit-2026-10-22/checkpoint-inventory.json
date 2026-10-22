@@ -1,0 +1,90 @@
+{
+  "goose_detection/models/goose_best.pth": {
+    "sha256": "9aade3182e4b226d966f2efdd22bcc91710c59f88af801b10e2e39a5db292048",
+    "bytes": 47609600,
+    "pickle_globals": [
+      "collections OrderedDict",
+      "torch FloatStorage",
+      "torch LongStorage",
+      "torch._utils _rebuild_tensor_v2"
+    ],
+    "string_metadata_candidates": []
+  },
+  "goose_detection/models/goose_yolo/weights/best.pt": {
+    "sha256": "ff320adac9e54349007e7aaf645a52749ba5841552b7e8104c01577bb89855c7",
+    "bytes": 19162778,
+    "pickle_globals": [
+      "__builtin__ set",
+      "collections OrderedDict",
+      "torch FloatStorage",
+      "torch HalfStorage",
+      "torch LongStorage",
+      "torch Size",
+      "torch._utils _rebuild_parameter",
+      "torch._utils _rebuild_tensor_v2",
+      "torch.nn.modules.activation SiLU",
+      "torch.nn.modules.batchnorm BatchNorm2d",
+      "torch.nn.modules.container ModuleList",
+      "torch.nn.modules.container Sequential",
+      "torch.nn.modules.conv Conv2d",
+      "torch.nn.modules.linear Identity",
+      "torch.nn.modules.pooling MaxPool2d",
+      "torch.nn.modules.upsampling Upsample",
+      "ultralytics.nn.modules.block Attention",
+      "ultralytics.nn.modules.block Bottleneck",
+      "ultralytics.nn.modules.block C2PSA",
+      "ultralytics.nn.modules.block C3k",
+      "ultralytics.nn.modules.block C3k2",
+      "ultralytics.nn.modules.block DFL",
+      "ultralytics.nn.modules.block PSABlock",
+      "ultralytics.nn.modules.block SPPF",
+      "ultralytics.nn.modules.conv Concat",
+      "ultralytics.nn.modules.conv Conv",
+      "ultralytics.nn.modules.conv DWConv",
+      "ultralytics.nn.modules.head Detect",
+      "ultralytics.nn.tasks DetectionModel"
+    ],
+    "string_metadata_candidates": [
+      "8.4.39",
+      "canadian_goose"
+    ]
+  },
+  "goose_detection/yolo26n.pt": {
+    "sha256": "9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef",
+    "bytes": 5544453,
+    "pickle_globals": [
+      "__builtin__ set",
+      "collections OrderedDict",
+      "torch FloatStorage",
+      "torch HalfStorage",
+      "torch LongStorage",
+      "torch Size",
+      "torch._utils _rebuild_parameter",
+      "torch._utils _rebuild_tensor_v2",
+      "torch.nn.modules.activation SiLU",
+      "torch.nn.modules.batchnorm BatchNorm2d",
+      "torch.nn.modules.container ModuleList",
+      "torch.nn.modules.container Sequential",
+      "torch.nn.modules.conv Conv2d",
+      "torch.nn.modules.linear Identity",
+      "torch.nn.modules.pooling MaxPool2d",
+      "torch.nn.modules.upsampling Upsample",
+      "ultralytics.nn.modules.block Attention",
+      "ultralytics.nn.modules.block Bottleneck",
+      "ultralytics.nn.modules.block C2PSA",
+      "ultralytics.nn.modules.block C3k",
+      "ultralytics.nn.modules.block C3k2",
+      "ultralytics.nn.modules.block PSABlock",
+      "ultralytics.nn.modules.block SPPF",
+      "ultralytics.nn.modules.conv Concat",
+      "ultralytics.nn.modules.conv Conv",
+      "ultralytics.nn.modules.conv DWConv",
+      "ultralytics.nn.modules.head Detect",
+      "ultralytics.nn.tasks DetectionModel"
+    ],
+    "string_metadata_candidates": [
+      "8.3.222",
+      "person"
+    ]
+  }
+}

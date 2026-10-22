@@ -1,0 +1,57 @@
+Camera running (headless). Ctrl+C to stop.
+GOOSE  (n=1 ids=[1]  top_conf=0.90  latency=0.0ms)
+[WARN] Dropped frame
+[WARN] Dropped frame
+Camera running (headless). Ctrl+C to stop.
+GOOSE  (n=1 ids=[1]  top_conf=0.90  latency=0.0ms)
+Camera running (headless). Ctrl+C to stop.
+GOOSE  (n=1 ids=[1]  top_conf=0.90  latency=0.0ms)
+{
+  "head": "b44d6e69708eff6057818973a453b18e1dfd5db5",
+  "results": [
+    {
+      "probe": "dropped_frames",
+      "laser_state_observed_before_probe_exit": [
+        true,
+        true,
+        true
+      ],
+      "mock_GPIO_output_sequence_including_finally": [
+        1,
+        0
+      ],
+      "assertions_passed": true
+    },
+    {
+      "probe": "next_inference",
+      "laser_state_observed_before_probe_exit": [
+        true
+      ],
+      "mock_GPIO_output_sequence_including_finally": [
+        1,
+        0
+      ],
+      "assertions_passed": true
+    },
+    {
+      "probe": "person_detected",
+      "laser_state_observed_before_probe_exit": [
+        false
+      ],
+      "mock_GPIO_output_sequence_including_finally": [
+        1,
+        0
+      ],
+      "assertions_passed": true
+    },
+    {
+      "probe": "worker_encoder_exception",
+      "exception_escapes_worker": true
+    },
+    {
+      "probe": "close_queue_put",
+      "explicit_timeout": null,
+      "blocking_default": true
+    }
+  ]
+}

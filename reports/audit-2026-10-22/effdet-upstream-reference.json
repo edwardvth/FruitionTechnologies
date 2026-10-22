@@ -1,0 +1,31 @@
+{
+  "package": "effdet==0.4.1",
+  "wheel": "https://files.pythonhosted.org/packages/9c/13/563119fe0af82aca5a3b89399c435953072c39515c2e818eb82793955c3b/effdet-0.4.1-py3-none-any.whl",
+  "sha256": "10889a226228d515c948e3fcf811e64c0d78d7aa94823a300045653b9c284cb7",
+  "anchors_py_relevant_lines": [
+    {
+      "line": 45,
+      "text": "def decode_box_outputs(rel_codes, anchors, output_xyxy: bool=False):"
+    },
+    {
+      "line": 75,
+      "text": "    if output_xyxy:"
+    },
+    {
+      "line": 82,
+      "text": "def clip_boxes_xyxy(boxes: torch.Tensor, size: torch.Tensor):"
+    },
+    {
+      "line": 128,
+      "text": "    # Appply bounding box regression to anchors, boxes are converted to xyxy"
+    },
+    {
+      "line": 130,
+      "text": "    boxes = decode_box_outputs(box_outputs.float(), anchor_boxes, output_xyxy=True)"
+    },
+    {
+      "line": 132,
+      "text": "        boxes = clip_boxes_xyxy(boxes, img_size / img_scale)  # clip before NMS better?"
+    }
+  ]
+}
